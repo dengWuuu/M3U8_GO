@@ -79,16 +79,18 @@ func GetFinalURL(content []string, url string) string {
 	return finalURL
 }
 
-func WriteToFile(content []string) {
-
+func ConvertStringSlice2ByteSlice(content []string) []byte {
 	// 将字符串切片转换为一个字符串，每个元素以换行符分隔
 	str := ""
 	for _, s := range content {
 		str += s + "\n"
 	}
+	return []byte(str)
+}
 
+func WriteToFile(content []string) {
 	// 将字符串写入文件
-	err := ioutil.WriteFile("output.txt", []byte(str), 0644)
+	err := ioutil.WriteFile("output.txt", ConvertStringSlice2ByteSlice(content), 0644)
 	if err != nil {
 		fmt.Println("Error writing file:", err)
 		return

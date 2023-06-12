@@ -47,8 +47,7 @@ func TestGetSimpleM3U8(t *testing.T) {
 		fmt.Printf("获取嵌套文件内容失败 %v", err)
 		return
 	}
+	byteSlice := ConvertStringSlice2ByteSlice(content)
 
-	fmt.Println(content)
-
-	WriteToFile(content)
+	fmt.Println(string(byteSlice))
 }
