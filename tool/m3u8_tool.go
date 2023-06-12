@@ -31,7 +31,7 @@ func GetM3U8FileContent(url string) ([]string, error) {
 }
 
 func IsM3U8(identify string) bool {
-	return strings.EqualFold(identify, Identify)
+	return identify == Identify
 }
 func IsNested(content []string) bool {
 	for _, str := range content {

@@ -11,11 +11,12 @@ func TestURLTool(t *testing.T) {
 	fmt.Println(strings.EqualFold(GetM3U8IndexURL(url), "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/"))
 }
 
-func TestGetM3U8(t *testing.T) {
+func TestGetSimpleM3U8(t *testing.T) {
 	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
 	fmt.Printf("读取的URL: %v \n", url)
 
 	content, err := GetM3U8FileContent(url)
+	fmt.Println(content)
 
 	if err != nil {
 		fmt.Printf("获取文件内容失败 %v", err)
@@ -26,7 +27,6 @@ func TestGetM3U8(t *testing.T) {
 		fmt.Println("不是m3u8文件")
 		return
 	}
-	fmt.Println(content)
 	if !IsNested(content) {
 		fmt.Println("不是嵌套m3u8文件")
 		return
@@ -51,5 +51,4 @@ func TestGetM3U8(t *testing.T) {
 	fmt.Println(content)
 
 	WriteToFile(content)
-
 }
