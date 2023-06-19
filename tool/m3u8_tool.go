@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	URL "net/url"
+	"path"
 	"strings"
 )
 
@@ -16,7 +18,12 @@ const M3U8Suffix = "m3u8"
 const HTTPPrefix = "http"
 
 func GetM3U8FileContent(url string) ([]string, error) {
-	resp, err := http.Get(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	//req.Header.Set("x-use-ppe", "1")
+	//req.Header.Set("x-tt-env", "ppe_13156482")
+	httpClient := http.Client{}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +67,26 @@ func GetM3U8IndexURL(url string) string {
 	// 使用切片操作获取前面部分的 URL
 	indexURL := url[:lastIndex+1]
 	return indexURL
+}
+
+func GetM3U8BaseURL(url string) string {
+	// 解析 URL
+	u, err := URL.Parse(url)
+	if err != nil {
+		panic(err)
+	}
+	// 获取完整的域名
+	domain := u.Scheme + "://" + u.Host
+	return domain
+}
+
+func GetM3U8Filename(url string) string {
+	u, err := URL.Parse(url)
+	if err != nil {
+		panic(err)
+	}
+	filename := path.Base(u.Path)
+	return filename
 }
 
 func GetFinalURL(content []string, url string) string {
