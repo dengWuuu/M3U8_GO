@@ -20,8 +20,8 @@ const HTTPPrefix = "http"
 func GetM3U8FileContent(url string) ([]string, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
-	//req.Header.Set("x-use-ppe", "1")
-	//req.Header.Set("x-tt-env", "ppe_13156482")
+	req.Header.Set("x-use-ppe", "1")
+	req.Header.Set("x-tt-env", "ppe_13156482")
 	httpClient := http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {

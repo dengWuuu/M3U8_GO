@@ -11,6 +11,11 @@ func TestURLTool(t *testing.T) {
 	fmt.Println(strings.EqualFold(GetM3U8IndexURL(url), "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/"))
 }
 
+func TestKey(t *testing.T) {
+	url := "https://hnzy.bfvvs.com/play/QeZ6Dv2e/index.m3u8"
+	fmt.Println(GenerateKey(url))
+}
+
 func TestGetFilename(t *testing.T) {
 	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
 	fmt.Println(GetM3U8Filename(url))
@@ -22,10 +27,8 @@ func TestURLBase(t *testing.T) {
 }
 
 func TestGetSimpleM3U8(t *testing.T) {
-	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
+	url := "https://m3u8i.vodfile.m1905.com/202306142018/370fa2ecea5e051541b9855f309209b8/movie/1106/11061180FDFDAA59BF1B.m3u8"
 	fmt.Printf("读取的URL: %v \n", url)
-
-	//url = "https://c2.monidai.com/20230614/mX62J59n/index.m3u8"
 	content, err := GetM3U8FileContent(url)
 	fmt.Println(content)
 
