@@ -25,25 +25,33 @@ func TestJson(t *testing.T) {
 }
 
 func TestKey(t *testing.T) {
-	url := "https://hnzy.bfvvs.com/play/QeZ6Dv2e/index.m3u8"
-	fmt.Println(GenerateKey(url))
-}
-
-func TestGetFilename(t *testing.T) {
-	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
-	fmt.Println(GetM3U8Filename(url))
+	urls := []string{
+		"https://c2.monidai.com/20230614/mX62J59n/index.m3u8",
+		"https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8",
+		"https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8",
+		"https://hnzy.bfvvs.com/play/mep7royd/index.m3u8",
+		"https://hnzy.bfvvs.com/play/nelDK47e/index.m3u8",
+		"https://hnzy.bfvvs.com/play/DdwZPPwb/index.m3u8",
+		"https://hnzy.bfvvs.com/play/DbDPBBnb/index.m3u8",
+		"https://hnzy.bfvvs.com/play/RdGzKV0b/index.m3u8",
+		"https://hnzy.bfvvs.com/play/RdGzKV0b/index.m3u8",
+		"https://hnzy.bfvvs.com/play/YaOLoLRb/index.m3u8",
+		"https://hnzy.bfvvs.com/play/rb22vGjb/index.m3u8",
+	}
+	for _, url := range urls {
+		fmt.Println(GenerateKey(url))
+	}
 }
 
 func TestURLBase(t *testing.T) {
-	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
+	url := "https://vip.lz-cdn1.com/20230613/21106_a7408872/index.m3u8"
 	fmt.Println(GetM3U8BaseURL(url))
 }
 
 func TestGetSimpleM3U8(t *testing.T) {
-	url := "https://vip.lz-cdn1.com/20230613/21106_a7408872/index.m3u8"
+	url := "https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8"
 	fmt.Printf("读取的URL: %v \n", url)
 	content, err := GetM3U8FileContent(url)
-	fmt.Println(content)
 
 	if err != nil {
 		fmt.Printf("获取文件内容失败 %v", err)
@@ -55,7 +63,8 @@ func TestGetSimpleM3U8(t *testing.T) {
 		return
 	}
 	if !IsNested(content) {
-		fmt.Println("不是嵌套m3u8文件")
+		content = TranslateM3U8ContentURL(content, url)
+		fmt.Println("不是嵌套m3u8文件", content)
 		return
 	}
 
@@ -78,4 +87,9 @@ func TestGetSimpleM3U8(t *testing.T) {
 	byteSlice := ConvertStringSlice2ByteSlice(content)
 
 	fmt.Println(string(byteSlice))
+}
+
+func TestTranslate(t *testing.T) {
+	content := []string{"#EXT-X-KEY:METHOD=AES-128,URI=\"enc.key\",IV=0x00000000000000000000000000000000"}
+	TranslateM3U8ContentURL(content, "https://example.com/index.m3u8")
 }

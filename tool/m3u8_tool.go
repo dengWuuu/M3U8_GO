@@ -5,23 +5,22 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	URL "net/url"
-	"path"
 	"strings"
 )
 
-const Identify = "#EXTM3U"
-const NestedPrefix = "#EXT-X-STREAM-INF"
-const M3U8Suffix = "m3u8"
-const HTTPPrefix = "http"
+const (
+	Identify              = "#EXTM3U"
+	NestedPrefix          = "#EXT-X-STREAM-INF"
+	M3U8Suffix            = "m3u8"
+	HTTPPrefix            = "http"
+	HTTPContentTypeHeader = "application/vnd.apple.mpegurl"
+	FileFolderPrefix      = "m3u8/"
+)
 
 func GetM3U8FileContent(url string) ([]string, error) {
-
 	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Set("x-use-ppe", "1")
-	req.Header.Set("x-tt-env", "ppe_13156482")
 	httpClient := http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -37,6 +36,18 @@ func GetM3U8FileContent(url string) ([]string, error) {
 
 	lines := strings.Split(string(body), "\n")
 	return lines, nil
+}
+func NewM3U8HttpRequest(url string) (*http.Request, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	SetHTTPHeader(req)
+	return req, nil
+}
+
+func SetHTTPHeader(req *http.Request) {
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 }
 
 func IsM3U8(identify string) bool {
@@ -73,36 +84,23 @@ func GetM3U8BaseURL(url string) string {
 	// 解析 URL
 	u, err := URL.Parse(url)
 	if err != nil {
-		panic(err)
+		return ""
 	}
 	// 获取完整的域名
 	domain := u.Scheme + "://" + u.Host
 	return domain
 }
 
-func GetM3U8Filename(url string) string {
-	u, err := URL.Parse(url)
-	if err != nil {
-		panic(err)
-	}
-	filename := path.Base(u.Path)
-	return filename
-}
-
+// GetFinalURL 获取嵌套在m3u8文件中的URL
 func GetFinalURL(content []string, url string) string {
 	finalURL := ""
-
 	// 理论上m3u8文件地址会在数组后面从后开始遍历更快返回二级URL字符串
 	for i := len(content) - 1; i >= 0; i-- {
+		// 字符串带m3u8后缀 说明这个是一个m3u8的链接
 		if strings.HasSuffix(content[i], M3U8Suffix) {
-			// 如果前缀带有 http 说明是完整的 url 不是 uri 不需要拼接
-			if strings.HasPrefix(content[i], HTTPPrefix) {
-				finalURL = content[i]
-				break
-			} else {
-				finalURL = GetM3U8IndexURL(url) + content[i]
-				break
-			}
+			// 前缀带有 http 说明是完整的 url 不是 uri 不需要拼接
+			finalURL = JoinURL(url, content[i])
+			break
 		}
 	}
 	return finalURL
@@ -117,42 +115,47 @@ func ConvertStringSlice2ByteSlice(content []string) []byte {
 	return []byte(str)
 }
 
-func WriteToFile(content []string) {
-	// 将字符串写入文件
-	err := ioutil.WriteFile("output.txt", ConvertStringSlice2ByteSlice(content), 0644)
-	if err != nil {
-		fmt.Println("Error writing file:", err)
-		return
-	}
-
-	fmt.Println("File written successfully")
-}
-
+// GenerateKey url对应生成的key是相同的 采用sha256
 func GenerateKey(url string) string {
 	byteURL := []byte(url)
 	hash := sha256.New()
-	//输入数据
 	hash.Write(byteURL)
-	//计算哈希值
 	bytes := hash.Sum(nil)
-	//将字符串编码为16进制格式,返回字符串
 	hashCode := hex.EncodeToString(bytes)
-	//返回哈希值
-	return hashCode
+	// 返回哈希值 + .m3u8的后缀 			加上m3u8/的前缀，在TOS m3u8/ 代表m3u8目录下存储这个文件
+	return FileFolderPrefix + hashCode + "." + M3U8Suffix
 }
 
 // TranslateM3U8ContentURL 将嵌套的m3u8 url 变成可访问的url
 func TranslateM3U8ContentURL(content []string, url string) []string {
 	for i, s := range content {
 		if !strings.HasPrefix(s, "#") {
-			if strings.HasPrefix(s, HTTPPrefix) {
-				continue
-			} else if strings.HasPrefix(s, "/") {
-				content[i] = GetM3U8BaseURL(url) + content[i]
-			} else {
-				content[i] = GetM3U8IndexURL(url) + content[i]
+			content[i] = JoinURL(url, s)
+		} else {
+			// 例子：需要替换uri #EXT-X-KEY:METHOD=AES-128,URI="enc.key",IV=0x00000000000000000000000000000000
+			if strings.Contains(s, "URI") {
+				// 找到 uri 后面双引号内的左右位置
+				uriStart := strings.Index(s, "URI=\"") + 5
+				uriEnd := strings.Index(s[uriStart:], "\"") + uriStart
+				// 构造替换后的值
+				oldURI := s[uriStart:uriEnd]
+				newKeyURI := JoinURL(url, oldURI)
+				// Replace the URI value
+				content[i] = s[:uriStart] + newKeyURI + s[uriEnd:]
 			}
 		}
 	}
 	return content
+}
+
+func JoinURL(url string, uri string) string {
+	finalURL := ""
+	if strings.HasPrefix(uri, HTTPPrefix) {
+		finalURL = uri
+	} else if strings.HasPrefix(uri, "/") {
+		finalURL = GetM3U8BaseURL(url) + uri
+	} else {
+		finalURL = GetM3U8IndexURL(url) + uri
+	}
+	return finalURL
 }
