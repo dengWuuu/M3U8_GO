@@ -140,3 +140,19 @@ func GenerateKey(url string) string {
 	//返回哈希值
 	return hashCode
 }
+
+// TranslateM3U8ContentURL 将嵌套的m3u8 url 变成可访问的url
+func TranslateM3U8ContentURL(content []string, url string) []string {
+	for i, s := range content {
+		if !strings.HasPrefix(s, "#") {
+			if strings.HasPrefix(s, HTTPPrefix) {
+				continue
+			} else if strings.HasPrefix(s, "/") {
+				content[i] = GetM3U8BaseURL(url) + content[i]
+			} else {
+				content[i] = GetM3U8IndexURL(url) + content[i]
+			}
+		}
+	}
+	return content
+}
