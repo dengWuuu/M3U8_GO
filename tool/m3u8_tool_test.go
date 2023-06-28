@@ -9,7 +9,7 @@ import (
 
 func TestURLTool(t *testing.T) {
 	url := "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8"
-	fmt.Println(strings.EqualFold(GetM3U8IndexURL(url), "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/"))
+	fmt.Println(strings.EqualFold(getM3U8IndexURL(url), "https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/"))
 }
 
 func TestJson(t *testing.T) {
@@ -24,10 +24,15 @@ func TestJson(t *testing.T) {
 	fmt.Println(paramsMap)
 }
 
+func TestIsM3U8URL(t *testing.T) {
+	url := "https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8"
+	fmt.Println(IsM3U8URL(url))
+}
+
 func TestKey(t *testing.T) {
 	urls := []string{
-		"https://c2.monidai.com/20230614/mX62J59n/index.m3u8",
-		"https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8",
+		"https://hot.qoqkkhy.com/20230622/bbI2Z53C/1000kb/hls/index.m3u8?_t=1687407585498",
+		"https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8?query=aksjdhfklashdfk",
 		"https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8",
 		"https://hnzy.bfvvs.com/play/mep7royd/index.m3u8",
 		"https://hnzy.bfvvs.com/play/nelDK47e/index.m3u8",
@@ -45,13 +50,13 @@ func TestKey(t *testing.T) {
 
 func TestURLBase(t *testing.T) {
 	url := "https://vip.lz-cdn1.com/20230613/21106_a7408872/index.m3u8"
-	fmt.Println(GetM3U8BaseURL(url))
+	fmt.Println(getM3U8BaseURL(url))
 }
 
 func TestGetSimpleM3U8(t *testing.T) {
 	url := "https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8"
 	fmt.Printf("读取的URL: %v \n", url)
-	content, err := GetM3U8FileContent(url)
+	content, err := GetM3U8FileContent(nil, url)
 
 	if err != nil {
 		fmt.Printf("获取文件内容失败 %v", err)
@@ -63,12 +68,13 @@ func TestGetSimpleM3U8(t *testing.T) {
 		return
 	}
 	if !IsNested(content) {
-		content = TranslateM3U8ContentURL(content, url)
+		content = translateM3U8ContentURL(content, url)
 		fmt.Println("不是嵌套m3u8文件", content)
 		return
 	}
 
 	if !IsSimpleSourceM3U8(content) {
+		content = translateM3U8ContentURL(content, url)
 		fmt.Println("多源的m3u8文件")
 		return
 	}
@@ -78,18 +84,17 @@ func TestGetSimpleM3U8(t *testing.T) {
 	}
 	fmt.Println(finalURL)
 
-	content, err = GetM3U8FileContent(finalURL)
+	content, err = GetM3U8FileContent(nil, finalURL)
 	if err != nil {
 		fmt.Printf("获取嵌套文件内容失败 %v", err)
 		return
 	}
-	content = TranslateM3U8ContentURL(content, finalURL)
-	byteSlice := ConvertStringSlice2ByteSlice(content)
+	byteSlice := ReturnM3U8Content(content, finalURL)
 
 	fmt.Println(string(byteSlice))
 }
 
 func TestTranslate(t *testing.T) {
 	content := []string{"#EXT-X-KEY:METHOD=AES-128,URI=\"enc.key\",IV=0x00000000000000000000000000000000"}
-	TranslateM3U8ContentURL(content, "https://example.com/index.m3u8")
+	translateM3U8ContentURL(content, "https://example.com/index.m3u8")
 }
