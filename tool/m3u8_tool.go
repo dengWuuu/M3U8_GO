@@ -11,15 +11,19 @@ import (
 )
 
 const (
-	Identify              = "#EXTM3U"
-	NestedPrefix          = "#EXT-X-STREAM-INF"
-	M3U8Suffix            = ".m3u8"
-	HTTPPrefix            = "http"
-	HTTPContentTypeHeader = "application/vnd.apple.mpegurl"
-	FileFolderPrefix      = "m3u8/"
+	Identify                  = "#EXTM3U"
+	NestedPrefix              = "#EXT-X-STREAM-INF"
+	M3U8Suffix                = ".m3u8"
+	TSSuffix                  = ".ts"
+	HTTPPrefix                = "http"
+	M3U8HTTPContentTypeHeader = "application/vnd.apple.mpegurl"
+	TSHTTPContentTypeHeader   = "application/x-linguist"
+	M3U8FileFolderPrefix      = "m3u8/"
+	TSFileFolderPrefix        = "ts/"
+	EmptyString               = ""
 )
 
-func GetM3U8FileContent(ctx context.Context, url string) ([]string, error) {
+func GetFileContent(ctx context.Context, url string) ([]byte, error) {
 	// 构建http请求 模仿浏览器发出请求设置请求头
 	req, err := newM3U8HttpRequest(url)
 	if err != nil {
@@ -36,10 +40,18 @@ func GetM3U8FileContent(ctx context.Context, url string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return body, nil
+}
 
+func GetM3U8FileContent(ctx context.Context, url string) ([]string, error) {
+	body, err := GetFileContent(ctx, url)
+	if err != nil {
+		return nil, err
+	}
 	lines := strings.Split(string(body), "\n")
 	return lines, nil
 }
+
 func newM3U8HttpRequest(url string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -59,6 +71,14 @@ func IsM3U8URL(url string) bool {
 		return false
 	}
 	return strings.HasSuffix(parseURL.Path, M3U8Suffix)
+}
+
+func IsTsURL(url string) bool {
+	parseURL, err := URL.Parse(url)
+	if err != nil {
+		return false
+	}
+	return strings.HasSuffix(parseURL.Path, TSSuffix)
 }
 
 func IsM3U8(identify string) bool {
@@ -129,14 +149,25 @@ func convertStringSlice2ByteSlice(content []string) []byte {
 }
 
 // GenerateKey url对应生成的key是相同的 采用sha256
-func GenerateKey(url string) string {
-	byteURL := []byte(url)
+// 如果是 m3u8 产生的文件名是 m3u8/m3u8文件名
+// 如果是 ts 产生的文件名是 ts/m3u8文件名/ts文件名
+// 根据 isM3U8 判断生成的是M3U8 key 还是 ts key
+func GenerateKey(originURL string, tsURL string, isM3U8 bool) string {
+	var byteURL []byte
+	if isM3U8 {
+		byteURL = []byte(originURL)
+	} else {
+		byteURL = []byte(tsURL)
+	}
 	hash := sha256.New()
 	hash.Write(byteURL)
 	bytes := hash.Sum(nil)
 	hashCode := hex.EncodeToString(bytes)
-	// 返回哈希值 + .m3u8的后缀 			加上m3u8/的前缀，在TOS m3u8/ 代表m3u8目录下存储这个文件
-	return FileFolderPrefix + hashCode + M3U8Suffix
+	if isM3U8 {
+		return M3U8FileFolderPrefix + hashCode + M3U8Suffix
+	} else {
+		return TSFileFolderPrefix + GenerateKey(originURL, EmptyString, true) + "/" + hashCode + TSSuffix
+	}
 }
 
 // TranslateM3U8ContentURL 将嵌套的m3u8 url 变成可访问的url
@@ -179,4 +210,38 @@ func joinURL(url string, uri string) string {
 		finalURL = getM3U8IndexURL(url) + uri
 	}
 	return finalURL
+}
+
+// GetTSURLFromM3U8 从 m3u8 文件获取 ts url 返回一个string数组代表 ts url 的集合
+// 输入值: num 代表要获取m3u8文件的几个ts url , content 代表 m3u8 文件
+// 返回值: bool 代表要存储的 ts 个数是否超过了 m3u8 含有的全部 ts 个数
+// cnt记录总数， cur记录存储了多少
+func GetTSURLFromM3U8(num int, content []string) (tsURLs []string, overNumber bool) {
+	cnt := 0
+	cur := 0
+	for _, url := range content {
+		if !IsTsURL(url) {
+			continue
+		}
+		cnt++
+		if cur < num {
+			tsURLs = append(tsURLs, url)
+			cur++
+		}
+	}
+	result := float32(cur) / float32(cnt)
+	return tsURLs, result >= 0.75
+}
+
+// GetAllFinalM3U8URL 从一个 m3u8 一级文件获取所有二级 m3u8 文件的url链接
+func GetAllFinalM3U8URL(content []string, url string) (finalURLs []string) {
+	for _, s := range content {
+		if strings.Contains(s, M3U8Suffix) {
+			finalURL := joinURL(url, s)
+			if IsM3U8URL(finalURL) {
+				finalURLs = append(finalURLs, finalURL)
+			}
+		}
+	}
+	return finalURLs
 }

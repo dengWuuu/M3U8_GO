@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/magiconair/properties/assert"
 )
 
 func TestURLTool(t *testing.T) {
@@ -31,7 +33,7 @@ func TestIsM3U8URL(t *testing.T) {
 
 func TestKey(t *testing.T) {
 	urls := []string{
-		"https://hot.qoqkkhy.com/20230622/bbI2Z53C/1000kb/hls/index.m3u8?_t=1687407585498",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8",
 		"https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8?query=aksjdhfklashdfk",
 		"https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8",
 		"https://hnzy.bfvvs.com/play/mep7royd/index.m3u8",
@@ -44,7 +46,7 @@ func TestKey(t *testing.T) {
 		"https://hnzy.bfvvs.com/play/rb22vGjb/index.m3u8",
 	}
 	for _, url := range urls {
-		fmt.Println(GenerateKey(url))
+		fmt.Println(GenerateKey(url, EmptyString, true))
 	}
 }
 
@@ -97,4 +99,52 @@ func TestGetSimpleM3U8(t *testing.T) {
 func TestTranslate(t *testing.T) {
 	content := []string{"#EXT-X-KEY:METHOD=AES-128,URI=\"enc.key\",IV=0x00000000000000000000000000000000"}
 	translateM3U8ContentURL(content, "https://example.com/index.m3u8")
+}
+
+func TestGetTSURLFromM3U8(t *testing.T) {
+	content := []string{"#EXTM3U",
+		"#EXT-X-VERSION:3,",
+		"#EXT-X-PLAYLIST-TYPE:VOD,",
+		"#EXT-X-MEDIA-SEQUENCE:0,",
+		"#EXT-X-TARGETDURATION:9,",
+		"#EXT-X-DISCONTINUITY,",
+		"#EXTINF:6.083333,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000000.ts",
+		"#EXTINF:4.125000,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000001.ts",
+		"#EXTINF:4.125000,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000002.ts",
+		"#EXTINF:4.166667,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000003.ts",
+		"#EXTINF:3.333333,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000004.ts",
+		"#EXTINF:4.166667,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000005.ts",
+		"#EXTINF:2.583333,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000006.ts",
+		"#EXTINF:4.166667,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000007.ts",
+		"#EXTINF:5.416667,",
+		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/2000k/hls/56207c2dfad000008.ts",
+	}
+	ls, isOverNum := GetTSURLFromM3U8(60, content)
+	assert.Equal(t, len(ls), 9)
+	assert.Equal(t, isOverNum, true)
+}
+
+func TestGetAllFinalM3U8URL(t *testing.T) {
+	url := ""
+	content := []string{
+		"#EXTM3U",
+		"#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=200000",
+		"https://devimages.apple.com/iphone/samples/bipbop/gear1/prog_index.m3u8",
+		"#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=311111",
+		"https://devimages.apple.com/iphone/samples/bipbop/gear2/prog_index.m3u8",
+		"#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=484444",
+		"https://devimages.apple.com/iphone/samples/bipbop/gear3/prog_index.m3u8",
+		"#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=737777",
+		"https://devimages.apple.com/iphone/samples/bipbop/gear4/prog_index.m3u8",
+	}
+	allFinalM3U8URL := GetAllFinalM3U8URL(content, url)
+	assert.Equal(t, len(allFinalM3U8URL), 4)
 }
