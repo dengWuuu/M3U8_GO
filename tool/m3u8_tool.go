@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	URL "net/url"
+	"regexp"
 	"strings"
 )
 
@@ -244,4 +245,16 @@ func GetAllFinalM3U8URL(content []string, url string) (finalURLs []string) {
 		}
 	}
 	return finalURLs
+}
+
+var linePattern = regexp.MustCompile(`([a-zA-Z-]+)=("[^"]+"|[^",]+)`)
+
+// ParseLineParameters extra parameters in string `line`
+func ParseLineParameters(line string) map[string]string {
+	r := linePattern.FindAllStringSubmatch(line, -1)
+	params := make(map[string]string)
+	for _, arr := range r {
+		params[arr[1]] = strings.Trim(arr[2], "\"")
+	}
+	return params
 }

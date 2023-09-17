@@ -27,19 +27,19 @@ func TestJson(t *testing.T) {
 }
 
 func TestIsM3U8URL(t *testing.T) {
-	url := "https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8"
+	url := "https://pptv.sd-play.com/202305/25/MAn1HN4wEu3/video/#EXTM3U"
 	fmt.Println(IsM3U8URL(url))
 }
 
 func TestKey(t *testing.T) {
 	urls := []string{
+		"https://vod1.jegms.com/20221123/YGBZrJjU/index.m3u8",
+		"https://pptv.sd-play.com/202305/25/MAn1HN4wEu3/video/index.m3u8",
+		"https://v6.szjal.cn/20201221/IKgzblU1/index.m3u8",
 		"https://hd.lz-cdn18.com/20230610/3269_5e4f3eae/index.m3u8",
-		"https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8?query=aksjdhfklashdfk",
-		"https://hnzy.bfvvs.com/play/pen8nwYb/index.m3u8",
-		"https://hnzy.bfvvs.com/play/mep7royd/index.m3u8",
-		"https://hnzy.bfvvs.com/play/nelDK47e/index.m3u8",
-		"https://hnzy.bfvvs.com/play/DdwZPPwb/index.m3u8",
-		"https://hnzy.bfvvs.com/play/DbDPBBnb/index.m3u8",
+		"https://m3u8i.vodfile.m1905.com/202306142018/370fa2ecea5e051541b9855f309209b8/movie/1106/11061180FDFDAA59BF1B.m3u8",
+		"https://c2.monidai.com/20230614/mX62J59n/index.m3u8",
+		"http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8",
 		"https://hnzy.bfvvs.com/play/RdGzKV0b/index.m3u8",
 		"https://hnzy.bfvvs.com/play/RdGzKV0b/index.m3u8",
 		"https://hnzy.bfvvs.com/play/YaOLoLRb/index.m3u8",
@@ -56,7 +56,7 @@ func TestURLBase(t *testing.T) {
 }
 
 func TestGetSimpleM3U8(t *testing.T) {
-	url := "https://hnzy.bfvvs.com/play/Ddw29WRb/index.m3u8"
+	url := "https://vod1.jegms.com/20221123/YGBZrJjU/index.m3u8"
 	fmt.Printf("读取的URL: %v \n", url)
 	content, err := GetM3U8FileContent(nil, url)
 
@@ -147,4 +147,13 @@ func TestGetAllFinalM3U8URL(t *testing.T) {
 	}
 	allFinalM3U8URL := GetAllFinalM3U8URL(content, url)
 	assert.Equal(t, len(allFinalM3U8URL), 4)
+}
+
+func Test(t *testing.T) {
+	parameters := ParseLineParameters("#EXT-X-KEY:METHOD=AES-128,URI=\"https://v.gsuus.com/play/xboq0Beg/enc.key\"")
+	fmt.Println(parameters)
+}
+
+func splitLines(s rune) bool {
+	return s == '\n' || s == '\r'
 }
