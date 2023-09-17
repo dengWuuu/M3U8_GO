@@ -3,6 +3,7 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -94,6 +95,22 @@ func TestGetSimpleM3U8(t *testing.T) {
 	byteSlice := ReturnM3U8Content(content, finalURL)
 
 	fmt.Println(string(byteSlice))
+}
+
+func TestGetSM3U8ByHTTPRange(t *testing.T) {
+	url := "https://vod1.jegms.com/20221123/YGBZrJjU/index.m3u8"
+	fmt.Printf("读取的URL: %v \n", url)
+	header := http.Header{
+		"Range": []string{"bytes=0-1023"},
+	}
+	content, err := GetFileContent(nil, url, header)
+
+	if err != nil {
+		fmt.Printf("获取文件内容失败 %v", err)
+		return
+	}
+	fmt.Println(string(content))
+
 }
 
 func TestTranslate(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	URL "net/url"
@@ -24,9 +25,9 @@ const (
 	EmptyString               = ""
 )
 
-func GetFileContent(ctx context.Context, url string) ([]byte, error) {
+func GetFileContent(ctx context.Context, url string, header http.Header) ([]byte, error) {
 	// 构建http请求 模仿浏览器发出请求设置请求头
-	req, err := newM3U8HttpRequest(url)
+	req, err := newHttpRequest(url, header)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func GetFileContent(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
+	fmt.Printf("[services.GetFileContent] resp:%v \n", resp)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -45,7 +46,7 @@ func GetFileContent(ctx context.Context, url string) ([]byte, error) {
 }
 
 func GetM3U8FileContent(ctx context.Context, url string) ([]string, error) {
-	body, err := GetFileContent(ctx, url)
+	body, err := GetFileContent(ctx, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -53,17 +54,23 @@ func GetM3U8FileContent(ctx context.Context, url string) ([]string, error) {
 	return lines, nil
 }
 
-func newM3U8HttpRequest(url string) (*http.Request, error) {
+func newHttpRequest(url string, header http.Header) (*http.Request, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	setHTTPHeader(req)
+	setHTTPHeader(req, header)
 	return req, nil
 }
 
-func setHTTPHeader(req *http.Request) {
+func setHTTPHeader(req *http.Request, header http.Header) {
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+
+	for key, value := range header {
+		for _, val := range value {
+			req.Header.Add(key, val)
+		}
+	}
 }
 
 func IsM3U8URL(url string) bool {
